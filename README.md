@@ -31,6 +31,29 @@ sudo apt-get install -y \
   cmake pkg-config g++
 ```
 
+> **Troubleshooting: `Package 'poppler-cpp' not found` although
+> `libpoppler-cpp-dev` is installed**
+>
+> This usually means CMake picked up a `pkg-config` from another toolchain
+> (e.g. Homebrew/linuxbrew), which only searches its own prefix. Verify with:
+>
+> ```sh
+> /usr/bin/pkg-config --modversion poppler-cpp   # system copy must find it
+> ```
+>
+> Fix for a single configure run:
+>
+> ```sh
+> cmake -B build -DPKG_CONFIG_EXECUTABLE=/usr/bin/pkg-config
+> ```
+>
+> …or extend the search path (persistent if exported):
+>
+> ```sh
+> export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig
+> cmake -B build
+> ```
+
 ## Build
 
 ```sh
