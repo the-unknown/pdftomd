@@ -1,26 +1,26 @@
 # pdftomd
 
-Konvertiert PDF-Dokumente zu strukturiertem Markdown (C++17).
+Converts PDF documents to structured Markdown (C++17).
 
-- Texte Extraktion über die **Poppler** C++ API (Font-Informationen inkludiert)
-- Automatische Erkennung von:
-  - **Headings** – über ein font-size-basiertes Rangkmodell (Relativgrößen gegen Body-Text)
-  - **Bold / Italic / Monospace** – über Font-Name-Substrings (`Bold`, `Oblique`, `Mono`, `Courier`, …)
-  - **URLs** – werden zu autolinked `<https://…>`
-  - **Aufzählungen** – Bullets (`•`, `-`, `*`, `◦`, `‣`, …) und nummerierte Listen, mit Einrückungs-Nesting
-  - **Absätze & Zeilenumbrüche** – Gap-basiertes Clustering von Wörtern zu Zeilen/Blöcken
-  - **Dehyphenierung** – Zeilenumbrüche mit `-` (klein) oder `–` werden rückgebaut
-- Unit-Tests (reine Logik) **und** Integrationstests (echte, minimal generierte PDFs durch Poppler) mit **GoogleTest**
+- Text extraction via the **Poppler** C++ API (including font information)
+- Automatic detection of:
+  - **Headings** – via a font-size-based rank model (relative sizes vs. body text)
+  - **Bold / Italic / Monospace** – via font-name substrings (`Bold`, `Oblique`, `Mono`, `Courier`, …)
+  - **URLs** – turned into autolinks `<https://…>`
+  - **Lists** – bullets (`•`, `-`, `*`, `◦`, `‣`, …) and numbered lists, with indentation-based nesting
+  - **Paragraphs & line breaks** – gap-based clustering of words into lines/blocks
+  - **Dehyphenation** – line-end `-` (lowercase) and `–` (en dash) are rejoined
+- Unit tests (pure logic) **and** integration tests (real, minimally generated PDFs driven through Poppler) with **GoogleTest**
 
-## Voraussetzungen (Libraries)
+## Prerequisites (Libraries)
 
-| Paket | Zweck |
+| Package | Purpose |
 |---|---|
-| `poppler-cpp` / `libpoppler-cpp-dev` | PDF-Textextraktion (C++ API) |
-| `googletest` / `libgtest-dev` | Unit-/Integrationstests |
-| `cmake` (≥ 3.16) | Build-System |
-| `pkg-config` | Abhängigkeitsauflösung |
-| GCC/Clang mit C++17 | Compiler |
+| `poppler-cpp` / `libpoppler-cpp-dev` | PDF text extraction (C++ API) |
+| `googletest` / `libgtest-dev` | Unit/integration tests |
+| `cmake` (≥ 3.16) | Build system |
+| `pkg-config` | Dependency resolution |
+| GCC/Clang with C++17 | Compiler |
 
 Installation (Debian/Ubuntu/Linux Mint):
 
@@ -38,50 +38,73 @@ cmake -B build
 cmake --build build -j$(nproc)
 ```
 
-Erzeugt:
+Produces:
 
 - `build/pdftomd` – CLI
-- `build/pdftomd_tests` – Test-Suite
+- `build/pdftomd_tests` – test suite
+
+## Installation
+
+There is no dedicated installer – CMake installs the binary into the usual
+prefix (default `/usr/local`):
+
+```sh
+cmake -B build
+cmake --build build -j$(nproc)
+sudo cmake --install build          # -> /usr/local/bin/pdftomd
+```
+
+Alternative without CMake:
+
+```sh
+sudo cp build/pdftomd /usr/local/bin/
+```
+
+The install prefix can be set: `cmake -B build -DCMAKE_INSTALL_PREFIX=/opt/pdftomd`.
+After installation the command is available everywhere: `pdftomd input.pdf`.
+
+Note: the runtime dependency `libpoppler` must be present on the target
+system (see above).
 
 ## Tests
 
 ```sh
-./build/pdftomd_tests                       # alle Tests
-./build/pdftomd_tests --gtest_filter='IntegrationTest*'   # nur Poppler-Integration
+./build/pdftomd_tests                       # all tests
+./build/pdftomd_tests --gtest_filter='IntegrationTest*'   # Poppler integration only
 ```
 
-Hinweis: Der Integrationstest `RealNourivaPdf` wird nur mitgebaut, wenn beim
-CMake-Konfigurieren eine `nouriva_woche_1_quellen.pdf` im Projektverzeichnis
-liegt (dynamisch via `-DREAL_PDF=…`).
+Note: the integration test `RealNourivaPdf` is only built if a
+`nouriva_woche_1_quellen.pdf` exists in the project directory at CMake
+configure time (wired up via `-DREAL_PDF=…`).
 
-## Nutzung
+## Usage
 
 ```sh
 ./build/pdftomd input.pdf                      # -> input.md
-./build/pdftomd input.pdf -o out.md            # explizites Zielfile
-./build/pdftomd input.pdf --stdout             # auf stdout
-./build/pdftomd input.pdf --pages 1-3,5        # Seitenauswahl
-./build/pdftomd input.pdf --no-urls            # keine Autolinks
-./build/pdftomd input.pdf --no-dehyphenate     # Dehyphenierung abschalten
+./build/pdftomd input.pdf -o out.md            # explicit output file
+./build/pdftomd input.pdf --stdout             # to stdout
+./build/pdftomd input.pdf --pages 1-3,5        # page selection
+./build/pdftomd input.pdf --no-urls            # no autolinks
+./build/pdftomd input.pdf --no-dehyphenate     # disable dehyphenation
 ```
 
-## Projektstruktur
+## Project layout
 
 ```
-src/pdf2md.h      – API (Datenmodell + reine Logik + Poppler-Wrapper)
-src/pdf2md.cc     – Implementierung
+src/pdf2md.h      – API (data model + pure logic + Poppler wrappers)
+src/pdf2md.cc     – implementation
 src/main.cc       – CLI
-tests/pdf_factory.h – minimale, gültige Test-PDFs generiert (Base-14-Fonts)
-tests/test_pdf2md.cc – 53 Unit-Tests + 15 Integrationstests
-CMakeLists.txt    – Build-Konfiguration
+tests/pdf_factory.h – generates minimal, valid test PDFs (Base-14 fonts)
+tests/test_pdf2md.cc – 53 unit tests + 15 integration tests
+CMakeLists.txt    – build configuration
 ```
 
-## Design-Hinweise
+## Design notes
 
-- Die Kernlogik (Gruppierung, Rendering, Linkify, Dehyphenation) ist poppler-frei
-  und daher ohne PDF-Datei unit-testbar.
-- Die Integrationstests generieren zur Laufzeit winzige, handbaute PDFs
-  (WinAnsi, Base-14-Fonts) und treiben sie durch den echten Poppler-Pfad.
-- Heading-Ränge sind heuristisch (Relative Größensignaturen gegen den
-  häufigsten Body-Font); `–`-Bindestriche in Zeilenenden werden als
-  Titelumbruch behandelt, `-` + Kleinschreibung als Dehyphenierung.
+- The core logic (grouping, rendering, linkify, dehyphenation) is
+  poppler-free and therefore unit-testable without any PDF file.
+- Integration tests generate tiny, hand-crafted PDFs (WinAnsi, Base-14
+  fonts) at runtime and drive them through the real Poppler path.
+- Heading ranks are heuristic (relative size signatures vs. the most
+  common body font); an en dash `–` at the end of a line is treated as a
+  title wrap, `-` followed by lowercase as hyphenation.

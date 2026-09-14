@@ -17,6 +17,9 @@ target_link_libraries(pdf2md_lib PUBLIC PkgConfig::POPPLER)
 add_executable(pdftomd src/main.cc)
 target_link_libraries(pdftomd PRIVATE pdf2md_lib)
 
+include(GNUInstallDirs)
+install(TARGETS pdftomd RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
